@@ -1,0 +1,57 @@
+#!/bin/bash
+
+mkdir -p out
+
+pushd out
+
+for c in protanope deuteranope tritanope; do
+    cat << EOF > results-$c.md
+Results for '$c'
+-------
+
+EOF
+
+done
+
+
+CBLUT=../../../build/Release/CBLut
+OPS="-m 1 -isxXyY"
+
+for i in ../tests/*.*; do
+    BASE=${i##*/}
+    IMAGE=${BASE%.*}
+
+    echo "=== processing " $IMAGE
+
+    mkdir -p $IMAGE
+    pushd $IMAGE
+
+        $CBLUT -f ../$i -p $OPS
+        cp identity.png protanope_identity.png
+        $CBLUT -f ../$i -d $OPS
+        cp identity.png deuteranope_identity.png
+        $CBLUT -f ../$i -t -rL $OPS
+        cp identity.png tritanope_identity.png
+
+    popd
+
+    echo "updating results-$c.md"
+
+    for c in protanope deuteranope tritanope; do
+        cat << EOF >> results-$c.md
+$IMAGE
+---
+
+<img src="$IMAGE/${c}_identity.png" alt="Original" width="256"/>
+<img src="$IMAGE/${c}_daltonise.png" alt="Daltonised" width="256"/>
+<img src="$IMAGE/${c}_correct.png" alt="Corrected" width="256"/>
+<img src="$IMAGE/${c}_simulate.png" alt="Simulated" width="256"/>
+<img src="$IMAGE/${c}_simulate_daltonised.png" alt="Simulated Daltonised" width="256"/>
+<img src="$IMAGE/${c}_simulate_corrected.png" alt="Simulated Corrected" width="256"/>
+
+EOF
+
+    done
+done
+
+popd
