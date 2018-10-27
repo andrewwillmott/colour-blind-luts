@@ -1,8 +1,11 @@
 #!/bin/bash
 
-mkdir -p out
+CBLUT=${CBLUT-./cblutgen}
+OPS=${OPS-"-m 1 -isxXyY"}
+OUT=${OUT-out}
 
-pushd out
+mkdir -p $OUT
+pushd $OUT
 
 for c in protanope deuteranope tritanope; do
     cat << EOF > results-$c.md
@@ -13,10 +16,6 @@ EOF
 
 done
 
-
-CBLUT=../../../build/Release/CBLut
-OPS="-m 1 -isxXyY"
-
 for i in ../tests/*.*; do
     BASE=${i##*/}
     IMAGE=${BASE%.*}
@@ -26,11 +25,11 @@ for i in ../tests/*.*; do
     mkdir -p $IMAGE
     pushd $IMAGE
 
-        $CBLUT -f ../$i -p $OPS
+        ../../$CBLUT -f ../$i -p $OPS
         cp identity.png protanope_identity.png
-        $CBLUT -f ../$i -d $OPS
+        ../../$CBLUT -f ../$i -d $OPS
         cp identity.png deuteranope_identity.png
-        $CBLUT -f ../$i -t -rL $OPS
+        ../../$CBLUT -f ../$i -t -rL $OPS
         cp identity.png tritanope_identity.png
 
     popd

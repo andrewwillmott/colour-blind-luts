@@ -90,9 +90,9 @@ Building
 
 To build and run the tool, use
 
-    c++ CBLuts.cpp CBLutGen.cpp -o cblutgen
+    c++ --std=c++11 CBLuts.cpp CBLutGen.cpp -o cblutgen
 
-Or, include these files in your favourite IDE, build, and run.
+Or, include these two files in your favourite IDE, build, and run.
 
 To generate simulated and corrected versions of the supplied [test
 images](tests), along with markdown-style results files, run the supplied

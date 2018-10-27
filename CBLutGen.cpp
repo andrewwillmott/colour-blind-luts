@@ -1,10 +1,12 @@
 //
-//  File:       CBLutsGen.cpp
+//  File:       CBLutGen.cpp
 //
 //  Function:   Utilities for colour-blind modelling and LUT construction
 //
 //  Copyright:  Andrew Willmott 2018
 //
+
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "CBLuts.h"
 
@@ -419,7 +421,7 @@ int main(int argc, const char* argv[])
             case 'm':
                 if (argc <= 0)
                     return fprintf(stderr, "Expecting strength for -m <float>\n");
-                strength = atof(argv[0]);
+                strength = (float) atof(argv[0]);
                 argv++; argc--;
                 break;
 
