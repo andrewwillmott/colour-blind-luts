@@ -4,8 +4,9 @@ CBLUTGen
 This is a tool for simulating and/or correcting for the main three types of
 colour blindness, protanopia, deuteranopia, and tritanopia. The first two of
 these, known collectively as red-green colour blindness, are the most common,
-and are Y-chromosome linked. Tritanopia is rarer, but age-related lens yellowing
-can be seen as a mild form of it.
+and are X-chromosome linked, meaning they predominantly affect males.
+Tritanopia, or blue-yellow colour blindness, is much is rarer, but age-related
+lens yellowing can be seen as a mild form of it.
 
 The tool can either process one-off source images, or be used to generate lookup
 tables, for use in real-time applications, e.g., as a post-process in a shader.
