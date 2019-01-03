@@ -17,12 +17,12 @@ namespace CBLut
     struct Mat3f { Vec3f x; Vec3f y; Vec3f z; };
 
     // LMS colour space, models human eye response: https://en.wikipedia.org/wiki/LMS_color_space
-    extern const Mat3f kLMSFromRGB;       /// Convert to LMS colour system
-    extern const Mat3f kRGBFromLMS;       /// Convert back from LMS colour system
+    extern const Mat3f kLMSFromRGB;     ///< Convert to LMS colour system
+    extern const Mat3f kRGBFromLMS;     ///< Convert back from LMS colour system
 
-    extern const Mat3f kLMSDeuteranope; /// Deuteranope: greens are greatly reduced (1% men)
-    extern const Mat3f kLMSProtanope;   /// Protanope: reds are greatly reduced (1% men)
-    extern const Mat3f kLMSTritanope;   /// Tritanope: blues are greatly reduced (0.003% population)
+    extern const Mat3f kLMSDeuteranope; ///< Deuteranope: greens are greatly reduced (1% men)
+    extern const Mat3f kLMSProtanope;   ///< Protanope: reds are greatly reduced (1% men)
+    extern const Mat3f kLMSTritanope;   ///< Tritanope: blues are greatly reduced (0.003% population)
 
     enum tLMS
     {
@@ -38,6 +38,7 @@ namespace CBLut
     Vec3f Correct  (Vec3f rgb, tLMS lmsType, float strength = 1.0f); ///< Correct image for given type of colour blindness using a mixture of amplification and hue shifting.
 
 
+    // Simple 32-bit RGBA handling
     struct RGBA32
     {
         union
@@ -52,15 +53,17 @@ namespace CBLut
     Vec3f  FromRGBA32 (RGBA32 rgb);
     Vec3f  FromRGBA32u(RGBA32 rgb);
 
-    void CreateCividisLUT(RGBA32 linearLUT[256]);   ///< Create "cividis" palette
-
-    // Basic RGB LUT support
-    constexpr int kLUTBits = 5;
+    // RGB LUT support
+    constexpr int kLUTBits = 5; // 32 x 32 x 32, compromise between accuracy and memory.
     constexpr int kLUTSize = 1 << kLUTBits;
 
-    void CreateIdentityLUT(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize]);
-    void ApplyLUT      (RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const RGBA32 dataIn[], RGBA32 dataOut[]);
-    void ApplyLUTNoLerp(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const RGBA32 dataIn[], RGBA32 dataOut[]);
+    void CreateIdentityLUT(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize]);    // Create identity
+    void ApplyLUT      (RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const RGBA32 dataIn[], RGBA32 dataOut[]); ///< Apply lut to the given image 
+    void ApplyLUTNoLerp(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const RGBA32 dataIn[], RGBA32 dataOut[]); ///< Apply lut to the given image, using point sampling
+
+    // Mono LUT support
+    void ApplyMonoLUT(const RGBA32 monoLUT[256], int n, const RGBA32 dataIn[], RGBA32 dataOut[], int channel = -1);
+    ///< Apply given mono->rgba ramp to either sRGB (D65) luminance, or the specified channel. 
 }
 
 #endif

@@ -13,6 +13,7 @@ tables, for use in real-time applications, e.g., as a post-process in a shader.
 Alternately the functions in CBLut.* can be incorporated directly into your own
 code.
 
+
 Correction
 ----------
 
@@ -32,8 +33,9 @@ In my tests the hue-based correction does a better job than Fidaner, however,
 I'd suggest trying both to see which best suits your particular scene type, as
 results are dependent on the distribution of source colours.
 
-LUTs
-----
+
+RGB LUTs
+--------
 
 The LUTs are in 32x32x32 RGB cube format, represented as 32x1024 2D images, as
 this is generally a good compromise between fidelity and size. (This can be
@@ -67,6 +69,7 @@ instance, by generating an identity LUT, then applying arbitrary image
 processing operations to that LUT (say in Photoshop), you'll get a LUT that can
 be used to apply the same operations to any image with a single texture lookup.
 
+
 Extras
 ------
 
@@ -86,14 +89,24 @@ hand much rarer, so cblutgen implements a strategy for converting the former
 into the latter -- see the -r option. Note that this is not as simple as just
 swapping channels, as doing that affects the image white point.
 
+Finally the tool supplies two colour blind-savvy false colour (luminance -> rgb)
+maps, via the -c option. It also supports three more standard maps, and applying
+any 256-wide png as a map. See cblutgen -h for more info, and
+[ColourMaps.h](ColourMaps.h) for references.
+
+![](luts/viridis_lut.png)     __Viridis__ (decent)
+
+![](luts/cividis_lut.png)     __Cividis__ (optimised further, a bit plainer)
+
+
 Building
 --------
 
 To build and run the tool, use
 
-    c++ --std=c++11 CBLuts.cpp CBLutGen.cpp -o cblutgen
+    c++ --std=c++11 CBLuts.cpp ColourMaps.cpp CBLutGen.cpp -o cblutgen
 
-Or, include these two files in your favourite IDE, build, and run.
+Or, include these files in your favourite IDE, build, and run.
 
 To generate simulated and corrected versions of the supplied [test
 images](tests), along with markdown-style results files, run the supplied

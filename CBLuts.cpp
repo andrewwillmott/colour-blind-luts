@@ -8,7 +8,6 @@
 
 #include "CBLuts.h"
 
-#include "CividisLUT.h"
 #include <math.h>
 #include <assert.h>
 
@@ -26,21 +25,21 @@ using namespace CBLut;
 
 const Mat3f CBLut::kLMSFromRGB =
 {
-    0.31399022,    0.63951294,    0.04649755,
-    0.15537241,    0.75789446,    0.08670142,
-    0.01775239,    0.10944209,    0.87256922,
+    0.31399022f,    0.63951294f,    0.04649755f,
+    0.15537241f,    0.75789446f,    0.08670142f,
+    0.01775239f,    0.10944209f,    0.87256922f,
 };
 
 const Mat3f CBLut::kRGBFromLMS =
 {
-    5.47221206,   -4.6419601,     0.16963708,
-    -1.1252419,    2.29317094,   -0.1678952,
-    0.02980165,   -0.19318073,    1.16364789,
+    5.47221206f,   -4.64196010f,    0.16963708f,
+    -1.1252419f,    2.29317094f,   -0.16789520f,
+    0.02980165f,   -0.19318073f,    1.16364789f,
 };
 
 const Mat3f CBLut::kLMSProtanope =      /// Protanope: red sensitivity is greatly reduced, reds/yellows appear darker (1% men).
 {
-    0, 1.05118294, -0.05116099,
+    0, 1.05118294f, -0.05116099f,
     0, 1, 0,
     0, 0, 1,
 };
@@ -48,7 +47,7 @@ const Mat3f CBLut::kLMSProtanope =      /// Protanope: red sensitivity is greatl
 const Mat3f CBLut::kLMSDeuteranope =    /// Deuteranope: green sensivitity is greatly reduced, no brightness issues (1% men)
 {
     1, 0, 0,
-    0.9513092, 0,  0.04866992,
+    0.9513092f, 0,  0.04866992f,
     0, 0, 1,
 };
 
@@ -56,7 +55,7 @@ const Mat3f CBLut::kLMSTritanope =      /// Tritanope: blue sensitivity greatly 
 {
     1, 0, 0,
     0, 1, 0,
-    -0.86744736, 1.86727089, 0
+    -0.86744736f, 1.86727089f, 0
 };
 
 namespace
@@ -88,38 +87,38 @@ namespace
     // Note that unlike kLMSFromRGB, LMS are weighted, e.g., red -> (17.8, 3.4, 0.02), blue ->  
     const Mat3f kLMSFromRGBV =
     {
-         { 17.8824,   43.5161,  4.11935 },
-         { 3.45565,   27.1554,  3.86714 },
-         { 0.0299566, 0.184309, 1.46709 },
+         { 17.8824f,   43.5161f,   4.11935f },
+         { 3.45565f,   27.1554f,   3.86714f },
+         { 0.0299566f,  0.184309f, 1.46709f },
     };
 
     const Mat3f kRGBFromLMSV =
     {
-        {  0.0809444479f,   -0.130504409f,    0.116721066f },
-        { -0.0102485335f,    0.0540193266f,  -0.113614708f },
+        {  0.080944447900f, -0.13050440900f,  0.116721066f },
+        { -0.010248533500f,  0.05401932660f, -0.113614708f },
         { -0.000365296938f, -0.00412161469f,  0.693511405f },
     };
 
     // These transforms to LMS colours simulate particular forms of colour blindness
     const Mat3f kLMSProtanopeV =      /// Protanope: red sensitivity is greatly reduced, reds/yellows appear darker (1% men).
     {
-         { 0.0, 2.02344, -2.52581, },
-         { 0.0, 1.0,      0.0,     },
-         { 0.0, 0.0,      1.0      },
+         { 0.0f, 2.02344f, -2.52581f, },
+         { 0.0f, 1.0f,      0.0f,     },
+         { 0.0f, 0.0f,      1.0f      },
     };
 
     const Mat3f kLMSDeuteranopeV =    /// Deuteranope: green sensivitity is greatly reduced, no brightness issues (1% men)
     {
-         { 1.0,      0.0, 0.0,      },
-         { 0.494207, 0.0, 1.24827,  },
-         { 0.0,      0.0, 1.0       },
+         { 1.0f,      0.0f, 0.0f,      },
+         { 0.494207f, 0.0f, 1.24827f,  },
+         { 0.0f,      0.0f, 1.0f       },
     };
 
     const Mat3f kLMSTritanopeV =      /// Tritanope: blue sensitivity greatly reduced (0.003% population)
     {
-         1.0,       0.0,      0.0,
-         0.0,       1.0,      0.0,
-         -0.395913, 0.801109, 0.0
+         1.0f,       0.0f,      0.0f,
+         0.0f,       1.0f,      0.0f,
+         -0.395913f, 0.801109f, 0.0f
     };
 }
 
@@ -132,21 +131,21 @@ namespace
     // Their precise values aren't discussed or justified in the paper.
     const Mat3f kDaltonErrorToDeltaP =
     {
-        { 0.0, 0.0, 0.0, },
-        { 0.7, 1.0, 0.0, },
-        { 0.7, 0.0, 1.0  },
+        { 0.0f, 0.0f, 0.0f, },
+        { 0.7f, 1.0f, 0.0f, },
+        { 0.7f, 0.0f, 1.0f  },
     };
     const Mat3f kDaltonErrorToDeltaD =
     {
-        { 1.0, 0.7, 0.0, },
-        { 0.0, 0.0, 0.0, },
-        { 0.0, 0.7, 1.0  },
+        { 1.0f, 0.7f, 0.0f, },
+        { 0.0f, 0.0f, 0.0f, },
+        { 0.0f, 0.7f, 1.0f  },
     };
     const Mat3f kDaltonErrorToDeltaT =
     {
-        { 1.0, 0.0, 0.7, },
-        { 0.0, 1.0, 0.7, },
-        { 0.0, 0.0, 0.0  },
+        { 1.0f, 0.0f, 0.7f, },
+        { 0.0f, 1.0f, 0.7f, },
+        { 0.0f, 0.0f, 0.0f  },
     };
 
     Vec3f SimulateV(Vec3f rgb, const Mat3f& lmsTransform)
@@ -186,9 +185,9 @@ namespace
 {
     const Mat3f kLMSSimulate =      // P/D/T simulation amalgamated into one matrix
     {
-        0,           1.05118294, -0.05116099,
-        0.9513092,   0,           0.04866992,
-        -0.86744736, 1.86727089,  0
+         0,            1.05118294f, -0.05116099f,
+         0.9513092f,   0,            0.04866992f,
+        -0.86744736f,  1.86727089f,  0
     };
 
     const Mat3f kNCDeltaBrighten =     // vanilla transfer error to remaining channels, like Daltonise approach but in lms space. amount=2.5 gets closish match
@@ -207,38 +206,38 @@ namespace
 
     const Mat3f kNCDeltaMix1 =          // mix of contrast/brighten
     {
-        0,   0.2, 0.8,
-        0.2, 0,   0.2,
-        0.8, 0.8, 0,
+        0.0f, 0.2f, 0.8f,
+        0.2f, 0.0f, 0.2f,
+        0.8f, 0.8f, 0.0f,
     };
 
     // const Mat3f kLMSDaltonError = kLMSFromRGB * kDaltonErrorToDeltaP * kRGBFromLMS;
     const Mat3f kNCDalton =         // The Fidaner RGB delta transformed to LMS space.
     {
-        { 1.90957534, -0.771573185, 0.0281965993f },
-        { 2.38503432, -1.02317369,  0.0739354342f },
-        { 3.66449642, -3.10851407,  1.11359835f   },
+        { 1.90957534f, -0.771573185f, 0.0281965993f },
+        { 2.38503432f, -1.023173690f, 0.0739354342f },
+        { 3.66449642f, -3.108514070f, 1.1135983500f },
     };
 
     const Mat3f kNCDeltaRecip =         // trans(1/kLMSSimulate)
     {
-        0,             1.05118299, -1.15280771,
-        0.951309144,    0,          0.535540938,
-        -19.5461426, 20.5465717,    0,
+        0,             1.05118299f, -1.15280771f,
+        0.951309144f,  0,            0.535540938f,
+        -19.5461426f,  20.5465717f,  0,
     };
 
     const Mat3f kNCDeltaRecipAbs =      // abs(trans(1/kLMSSimulate))
     {
-        0,             1.05118299, 1.15280771,
-        0.951309144,    0,         0.535540938,
-        19.5461426, 20.5465717,    0,
+         0,              1.05118299f,  1.15280771f,
+         0.951309144f,   0,            0.535540938f,
+        19.5461426f,    20.5465717f,   0,
     };
 
     const Mat3f kNCDeltaInv =     // inv(kSimulate)
     {
-        0.672, 0.706, -0.378,
-        0.312, 0.328, 0.360,
-        -13.133, 6.741, 7.393
+          0.672f, 0.706f, -0.378f,
+          0.312f, 0.328f,  0.360f,
+        -13.133f, 6.741f,  7.393f
     };
 }
 
@@ -281,7 +280,7 @@ Vec3f CBLut::Correct(Vec3f rgb, tLMS lmsType, float strength)
 }
 
 
-// --- LUT support ------------------------------------------------------------
+// --- RGB LUT support ---------------------------------------------------------
 
 namespace
 {
@@ -346,16 +345,6 @@ Vec3f CBLut::FromRGBA32u(RGBA32 rgb)
     return pow(c, kGamma);
 }
     
-
-void CBLut::CreateCividisLUT(RGBA32 linearLUT[256])
-{
-    for (int i = 0; i < 256; i++)
-    {
-        Vec3f c0 = { kCividisLUT[i][2], kCividisLUT[i][1], kCividisLUT[i][0] };
-        
-        linearLUT[i] = ToRGBA32(c0);
-    }
-}
 
 void CBLut::CreateIdentityLUT(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize])
 {
@@ -454,3 +443,25 @@ void CBLut::ApplyLUTNoLerp(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, c
     }
 }
 
+// --- Mono LUT support --------------------------------------------------------
+
+void CBLut::ApplyMonoLUT(const RGBA32 monoLUT[256], int n, const RGBA32 dataIn[], RGBA32 dataOut[], int channel)
+{
+    if (channel < 0)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            Vec3f c = FromRGBA32(dataIn[i]);    // now linear
+            float lumD65 = dot(Vec3f{0.2126f, 0.7152f, 0.0722f}, c);
+            
+            uint8_t lumU8 = ToU8(pow(lumD65, 1.0f / kGamma));    // lookup tables are in gamma space
+        
+            dataOut[i] = monoLUT[lumU8];
+        }
+        return;
+    }
+    
+    for (int i = 0; i < n; i++)
+        dataOut[i] = monoLUT[dataIn[i].c[channel]];
+}
+    

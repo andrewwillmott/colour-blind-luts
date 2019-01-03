@@ -10,16 +10,17 @@
 
 #include "CBLuts.h"
 
-#include "CividisLUT.h"
+#include "ColourMaps.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "stb_image_mini.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
+
+#ifdef _MSC_VER
+    #define strlcpy(d, s, ds) strcpy_s(d, ds, s)
+#endif
 
 using namespace CBLut;
 
@@ -86,6 +87,32 @@ namespace
         return rgb;
     }
 
+    Vec3f RemapLToS(Vec3f rgb)
+    {
+        Vec3f lmsP = kLMSFromRGB * rgb;
+        Vec3f lmsSimP = kLMSProtanope * lmsP;
+        
+        float error = lmsP.x - lmsSimP.x; 
+
+        Vec3f lmsS = lmsSimP;
+        lmsS.z += 10 * error;
+        
+        return kRGBFromLMS * lmsS;
+    }
+
+    Vec3f RemapMToS(Vec3f rgb)
+    {
+        Vec3f lmsM = kLMSFromRGB * rgb;
+        Vec3f lmsSimM = kLMSDeuteranope * lmsM;
+        
+        float error = lmsM.x - lmsSimM.x; 
+
+        Vec3f lmsS = lmsSimM;
+        lmsS.z += 10 * error;
+        
+        return kRGBFromLMS * lmsS;
+    }
+
     template<class T> void CreateLUT(T xform, RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize])
     {
         constexpr int scale  = 256 / kLUTSize;
@@ -125,7 +152,12 @@ namespace
         else
             CreateLUT(xform, rgbLUT);
     }
+}
 
+
+namespace
+{
+    // Main rgb LUT processing routines
     enum tCBType
     {
         kIdentity,
@@ -147,181 +179,242 @@ namespace
         kCorrectSimulate,
         kPassThrough,
     };
-}
 
-void CreateImage(tImageOp op, tCBType cbType, float strength, int w, int h, const RGBA32* dataIn, bool noLUT)
-{
-    tLMS lmsType = kL;
-    char filename[256];
-    
-    switch (cbType)
+    void CreateImage(tImageOp op, tCBType cbType, float strength, int w, int h, const RGBA32* dataIn, const char* dataInName, bool noLUT)
     {
-    case kIdentity:
-        strcpy(filename, "identity");
-        break;
+        if (cbType == kAll)
+        {
+            CreateImage(op, kProtanope,   strength, w, h, dataIn, dataInName, noLUT);
+            CreateImage(op, kDeuteranope, strength, w, h, dataIn, dataInName, noLUT);
+            CreateImage(op, kTritanope,   strength, w, h, dataIn, dataInName, noLUT);
+            return;
+        };
 
-    case kProtanope:
-        strcpy(filename, "protanope"); 
-        lmsType = kL;
-        break;
-    case kDeuteranope:
-        strcpy(filename, "deuteranope"); 
-        lmsType = kM;
-        break;
-    case kTritanope:
-        strcpy(filename, "tritanope"); 
-        lmsType = kS;
-        break;
+        tLMS lmsType = kL;
+        char filename[256] = "";
 
-    case kAll:
-        CreateImage(op, kProtanope,   strength, w, h, dataIn, noLUT);
-        CreateImage(op, kDeuteranope, strength, w, h, dataIn, noLUT);
-        CreateImage(op, kTritanope,   strength, w, h, dataIn, noLUT);
-        return;
-    };
+        if (dataIn)
+            snprintf(filename, sizeof(filename), "%s_", dataInName);
 
-    RGBA32 rgbaLUT[kLUTSize][kLUTSize][kLUTSize];
-    RGBA32* dataOut = 0;
-    int n = w * h;
-    
-    if (noLUT && dataIn) 
-        dataOut = new RGBA32[n];
-    
-    switch (op)
-    {
-    case kSimulate:
-        PerformOp([lmsType, strength](Vec3f c){ return Simulate(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_simulate");
-        break;
-    case kError:
-        PerformOp([lmsType, strength](Vec3f c){ return RGBError(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_error");
-        break;
-    case kDaltonise:
-        PerformOp([lmsType, strength](Vec3f c) { return Daltonise(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_daltonise");
-        break;
-    case kCorrect:
-        PerformOp([lmsType, strength](Vec3f c) { return Correct(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_correct");
-        break;
-    case kDaltoniseSimulate:
-        PerformOp([lmsType, strength](Vec3f c) { return Simulate(ClampUnit(Daltonise(c, lmsType, strength)), lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_simulate_daltonised");
-        break;
-    case kCorrectSimulate:
-        PerformOp([lmsType, strength](Vec3f c) { return Simulate(ClampUnit(Correct(c, lmsType, strength)), lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
-        strcat(filename, "_simulate_corrected");
-        break;
-    case kPassThrough:
+        switch (cbType)
+        {
+        case kIdentity:
+            strcat(filename, "identity");
+            break;
+        case kProtanope:
+            strcat(filename, "protanope");
+            lmsType = kL;
+            break;
+        case kDeuteranope:
+            strcat(filename, "deuteranope");
+            lmsType = kM;
+            break;
+        case kTritanope:
+            strcat(filename, "tritanope");
+            lmsType = kS;
+            break;
+        default:
+            return;
+        }
+
+        RGBA32 rgbaLUT[kLUTSize][kLUTSize][kLUTSize];
+        RGBA32* dataOut = 0;
+        int n = w * h;
+        
+        if (noLUT && dataIn) 
+            dataOut = new RGBA32[n];
+        
+        switch (op)
+        {
+        case kSimulate:
+            PerformOp([lmsType, strength](Vec3f c){ return Simulate(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_simulate");
+            break;
+        case kError:
+            PerformOp([lmsType, strength](Vec3f c){ return RGBError(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_error");
+            break;
+        case kDaltonise:
+            PerformOp([lmsType, strength](Vec3f c) { return Daltonise(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_daltonise");
+            break;
+        case kCorrect:
+            PerformOp([lmsType, strength](Vec3f c) { return Correct(c, lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_correct");
+            break;
+        case kDaltoniseSimulate:
+            PerformOp([lmsType, strength](Vec3f c) { return Simulate(ClampUnit(Daltonise(c, lmsType, strength)), lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_simulate_daltonised");
+            break;
+        case kCorrectSimulate:
+            PerformOp([lmsType, strength](Vec3f c) { return Simulate(ClampUnit(Correct(c, lmsType, strength)), lmsType, strength); }, rgbaLUT, n, dataIn, dataOut);
+            strcat(filename, "_simulate_corrected");
+            break;
+        case kPassThrough:
+            if (dataOut)
+                PerformOp([](Vec3f c) { return c; }, rgbaLUT, n, dataIn, dataOut);
+            else
+                CreateIdentityLUT(rgbaLUT);
+            break;
+        };
+
+        if (dataIn && !dataOut)
+        {
+            dataOut = new RGBA32[n];
+
+            ApplyLUT(rgbaLUT, n, dataIn, dataOut);
+        }
+
         if (dataOut)
-            PerformOp([](Vec3f c) { return c; }, rgbaLUT, n, dataIn, dataOut);
-            // memcpy(dataOut, dataIn, n * sizeof(RGBA32));
+        {
+            strcat(filename, ".png");
+            printf("Saving %s\n", filename);
+            stbi_write_png(filename, w, h, 4, dataOut, 0);
+
+            delete[] dataOut;
+        }
         else
-            CreateIdentityLUT(rgbaLUT);
-        break;
-    };
-
-    if (dataIn && !dataOut)
-    {
-        dataOut = new RGBA32[n];
-
-        ApplyLUT(rgbaLUT, n, dataIn, dataOut);
+        {
+            strcat(filename, "_lut.png");
+            printf("Saving %s\n", filename);
+            stbi_write_png(filename, kLUTSize * kLUTSize, kLUTSize, 4, rgbaLUT, 0);
+        }
     }
 
-    if (dataOut)
+    void CreateImage(const RGBA32* rgbaLUT, int w, int h, const RGBA32* dataIn)
     {
+        int n = w * h;
+        RGBA32* dataOut = new RGBA32[n];
+
+        ApplyLUT(* (RGBA32 (*)[kLUTSize][kLUTSize][kLUTSize]) (RGBA32*) rgbaLUT, w * h, dataIn, dataOut);
+        
+        char filename[256] = "apply_lut";
+        
+        printf("Saving %s\n", filename);
         strcat(filename, ".png");
+
+        stbi_write_png(filename, w, h, 4, dataOut, 0);
+
+        delete[] dataOut;
+    }
+}
+
+
+namespace
+{
+    // Mono LUT processing
+    struct cMonoLUTEntry { const char* name; const uint8_t (*lut)[4]; } kMonoLUTs[]  = 
+    {
+        "cividis", kCividisLUT,
+        "viridis", kViridisLUT,
+        "magma",   kMagmaLUT  ,
+        "inferno", kInfernoLUT,
+        "plasma",  kPlasmaLUT ,
+    };
+
+    void PrintMonoLUT(const char* name, const RGBA32 monoLUT[256])
+    {
+        printf("const unsigned char k%s[256][4] =\n{\n", name);
+
+        for (int i = 0; i < 256; i++)
+        {
+            const uint8_t* c = monoLUT[i].c;
+            printf("    %3d, %3d, %3d, %3d,\n", c[0], c[1], c[2], c[3]);
+        } 
+
+        printf("};\n");
+    }
+
+    void CreateImageWithMonoLUT(const RGBA32 monoLUT[256], const char* lutName, int w, int h, const RGBA32* dataIn, const char* dataName, int channel)
+    {
+        RGBA32* dataOut = 0;
+
+        if (dataIn)
+        {
+            dataOut = new RGBA32[w * h];
+            ApplyMonoLUT(monoLUT, w * h, dataIn, dataOut, channel);
+        }
+        else
+        {
+            w = 256;
+            h = 8;
+            dataOut = new RGBA32[w * h];
+            for (int i = 0; i < h; i++)
+                memcpy(dataOut + i * w, monoLUT, w * sizeof(RGBA32));
+        }
+        
+        char filename[256];
+        
+        if (dataIn)
+            snprintf(filename, sizeof(filename), "%s_%s.png", dataName, lutName);
+        else
+            snprintf(filename, sizeof(filename), "%s_lut.png", lutName);
+        
         printf("Saving %s\n", filename);
         stbi_write_png(filename, w, h, 4, dataOut, 0);
 
         delete[] dataOut;
     }
-    else
+}
+
+namespace
+{
+    int Help(const char* command)
     {
-        strcat(filename, "_lut.png");
-        printf("Saving %s\n", filename);
-        stbi_write_png(filename, kLUTSize * kLUTSize, kLUTSize, 4, rgbaLUT, 0);
+        printf
+        (
+            "%s <options> <operations>\n"
+            "\n"
+            "Options:\n"
+            "  -h        : this help\n"
+            "  -f <path> : set image to process rather than emitting lut\n"
+            "  -p        : emit protanope image or lut\n"
+            "  -d        : emit deuteranope image or lut\n"
+            "  -t        : emit tritanope image or lut\n"
+            "  -a        : emit image or lut for all the above types (default)\n"
+            "  -m <str>  : specify strength of colour blindness to correct for. Default = 1 (affected channel is completely lost.)\n" 
+            "  -n        : directly transform input image rather than using a LUT\n"
+            "  -g[LMS]   : swap LM/MS/LS channels of input image before processing\n"
+            "  -r[LM]    : remap L or M channels to S, converting a prot/deuter test image to tritanope.\n"
+            "\n"
+            "Operations:\n"
+            "  -s        : simulate given type of colour-blindness\n"
+            "  -x        : daltonise (Fidaner) for given type of colour-blindness\n"
+            "  -X        : daltonise for and then simulate given type of colour-blindness\n"
+            "  -y        : correct for given type of colour-blindness\n"
+            "  -Y        : correct for and then simulate given type of colour-blindness\n"
+            "  -e        : error between original colour and simulated version\n"
+            "  -i        : emit identity image or lut (for testing)\n"
+            "  -l <path> : apply the given LUT to source (requires -f)\n"
+            "\n"
+            "  -c <name> [<channel>] : apply given greyscale lut: cividis, viridis (cb-savvy). magma, inferno, plasma (standard)\n"
+            "                          'name' can also be the path of a 256-wide LUT in image form\n"
+            "                          if channel is supplied, it is used to index the lut, otherwise sRGB/D65 luminance is used\n"
+            "\nExample:\n"
+            "  %s -f image.png -p -sxy\n"
+            "      # emit simulated, daltonised, and corrected version of image.png for protanopia only.\n"
+            , command, command
+        );
+
+        return 0;
     }
-}
 
-void CreateImage(const RGBA32* rgbaLUT, int w, int h, const RGBA32* dataIn)
-{
-    int n = w * h;
-    RGBA32* dataOut = new RGBA32[n];
+    void GetFileName(char* buffer, size_t bufferSize, const char* path)
+    {
+        const char* lastSlash = strrchr(path, '/');
+        if (!lastSlash)
+            lastSlash = strrchr(path, '\\');
 
-    ApplyLUT(* (RGBA32 (*)[kLUTSize][kLUTSize][kLUTSize]) (RGBA32*) rgbaLUT, w * h, dataIn, dataOut);
-    
-    char filename[256] = "apply_lut";
-    
-    printf("Saving %s\n", filename);
-    strcat(filename, ".png");
+        if (lastSlash)
+            strlcpy(buffer, lastSlash + 1, bufferSize);
+        else
+            strlcpy(buffer, path, bufferSize);
 
-    stbi_write_png(filename, w, h, 4, dataOut, 0);
+        char* lastDot = strrchr(buffer, '.');
 
-    delete[] dataOut;
-}
-
-Vec3f RemapLToS(Vec3f rgb)
-{
-    Vec3f lmsP = kLMSFromRGB * rgb;
-    Vec3f lmsSimP = kLMSProtanope * lmsP;
-    
-    float error = lmsP.x - lmsSimP.x; 
-
-    Vec3f lmsS = lmsSimP;
-    lmsS.z += 10 * error;
-    
-    return kRGBFromLMS * lmsS;
-}
-
-Vec3f RemapMToS(Vec3f rgb)
-{
-    Vec3f lmsM = kLMSFromRGB * rgb;
-    Vec3f lmsSimM = kLMSDeuteranope * lmsM;
-    
-    float error = lmsM.x - lmsSimM.x; 
-
-    Vec3f lmsS = lmsSimM;
-    lmsS.z += 10 * error;
-    
-    return kRGBFromLMS * lmsS;
-}
-
-int Help(const char* command)
-{
-    printf
-    (
-        "%s <options> <operations>\n"
-        "\n"
-        "Options:\n"
-        "  -h        : this help\n"
-        "  -f <path> : set image to process rather than emitting lut\n"
-        "  -p        : emit protanope image or lut\n"
-        "  -d        : emit deuteranope image or lut\n"
-        "  -t        : emit tritanope image or lut\n"
-        "  -a        : emit image or lut for all the above types (default)\n"
-        "  -n        : directly transform input image rather than using a LUT\n"
-        "  -g[LMS]   : swap LM/MS/LS channels of input image before processing\n"
-        "  -r[LM]    : remap L or M channels to S, converting a prot/deuter test image to tritanope.\n"
-        "\n"
-        "Operations:\n"
-        "  -s        : simulate given type of colour-blindness\n"
-        "  -x        : daltonise (Fidaner) for given type of colour-blindness\n"
-        "  -X        : daltonise for and then simulate given type of colour-blindness\n"
-        "  -y        : correct for given type of colour-blindness\n"
-        "  -Y        : correct for and then simulate given type of colour-blindness\n"
-        "  -e        : error between original colour and simulated version\n"
-        "  -i        : emit identity image or lut (for testing)\n"
-        "  -l <path> : apply the given LUT to source (requires -f)\n"
-        "  -c        : emit cividis lut\n"
-        "\nExample:\n"
-        "  %s -f image.png -p -sxy\n"
-        "      # emit simulated, daltonised, and corrected version of image.png for protanopia only.\n"
-        , command, command
-    );
-
-    return 0;
+        if (lastDot)
+            *lastDot = 0;
+    }
 }
 
 int main(int argc, const char* argv[])
@@ -336,6 +429,7 @@ int main(int argc, const char* argv[])
     int w;
     int h;
     RGBA32* dataIn = 0;
+    char dataInName[256] = "unknown";
     float strength = 1.0f;
     bool noLUT = false;
 
@@ -354,10 +448,58 @@ int main(int argc, const char* argv[])
                 return Help(command);
 
             case 'c':
-                RGBA32 linearLUT[8][256];
-                for (int i = 0; i < 8; i++)
-                    CreateCividisLUT(linearLUT[i]);
-                stbi_write_png("cividis_lut.png", 256, 8, 4, linearLUT, 0);
+                {
+                    const RGBA32* lutTable = 0;
+                    const char*   lutName  = 0;
+                    int           channel  = -1;
+
+                    if (!(argc > 0 && argv[0][0] != '-'))
+                    {
+                        fprintf(stderr, "Expecting lut argument\n");
+                        return -1;
+                    }
+
+                    for (cMonoLUTEntry& entry : kMonoLUTs)
+                        if (strcmp(argv[0], entry.name) == 0)
+                        {
+                            lutTable = (const RGBA32*) entry.lut;
+                            lutName  = entry.name;
+                            break;
+                        }
+
+                    if (!lutTable)
+                    {
+                        int lw, lh;
+                        lutTable = (RGBA32*) stbi_load(argv[0], &lw, &lh, 0, 4);
+
+                        static char lutNameStore[256];
+                        GetFileName(lutNameStore, sizeof(lutNameStore), argv[0]);
+                        lutName = lutNameStore;
+
+                        if (!lutTable)
+                        {
+                            fprintf(stderr, "Unknown mono LUT or file not found: %s\n", argv[0]);
+                            return -1;
+                        }
+
+                        if (lw != 256)
+                        {
+                            fprintf(stderr, "Expecting mono LUT width of 256\n");
+                            return -1;
+                        }
+                    }
+
+                    argv++; argc--;
+
+                    if (argc > 0 && argv[0][0] != '-')
+                    {
+                        channel = atoi(argv[0]);
+                        argv++; argc--;
+                    }
+                    
+                    CreateImageWithMonoLUT(lutTable, lutName, w, h, dataIn, dataInName, channel);
+                        // PrintMonoLUT(lutName, lutTable);
+                }
                 break;
 
             case 'f':
@@ -372,6 +514,8 @@ int main(int argc, const char* argv[])
                     return -1;
                 }
 
+                GetFileName(dataInName, sizeof(dataInName), argv[0]);
+
                 argv++; argc--;
                 break;
 
@@ -382,6 +526,7 @@ int main(int argc, const char* argv[])
                     w = 256;
                     h = 256;
                     dataIn = new RGBA32[w * h];
+                    strcpy(dataInName, "swatch");
 
                     RGBA32* p = dataIn;
                     for (int y = 0; y < h; y++)
@@ -426,29 +571,29 @@ int main(int argc, const char* argv[])
                 break;
 
             case 's':
-                CreateImage(kSimulate, cbType,   strength, w, h, dataIn, noLUT);
+                CreateImage(kSimulate,          cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
 
             case 'e':
-                CreateImage(kError, cbType,      strength, w, h, dataIn, noLUT);
+                CreateImage(kError,             cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
 
             case 'x':
-                CreateImage(kDaltonise, cbType,   strength, w, h, dataIn, noLUT);
+                CreateImage(kDaltonise,         cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
             case 'X':
-                CreateImage(kDaltoniseSimulate, cbType,   strength, w, h, dataIn, noLUT);
+                CreateImage(kDaltoniseSimulate, cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
 
             case 'y':
-                CreateImage(kCorrect, cbType,   strength, w, h, dataIn, noLUT);
+                CreateImage(kCorrect,           cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
             case 'Y':
-                CreateImage(kCorrectSimulate, cbType,   strength, w, h, dataIn, noLUT);
+                CreateImage(kCorrectSimulate,   cbType, strength, w, h, dataIn, dataInName, noLUT);
                 break;
 
             case 'i':
-                CreateImage(kPassThrough, kIdentity, strength, w, h, dataIn, noLUT);
+                CreateImage(kPassThrough, kIdentity, strength, w, h, dataIn, dataInName, noLUT);
                 break;
 
             case 'g':
@@ -500,19 +645,19 @@ int main(int argc, const char* argv[])
                 
                 if (!lut)
                 {
-                    fprintf(stderr, "Couldn't read %s\n", argv[0]);
+                    fprintf(stderr, "Couldn't read RGB LUT %s\n", argv[0]);
                     return -1;
                 }
 
                 if (lw != kLUTSize * kLUTSize)
                 {
-                    fprintf(stderr, "Expecting LUT width of %d\n", kLUTSize * kLUTSize);
+                    fprintf(stderr, "Expecting RGB LUT width of %d\n", kLUTSize * kLUTSize);
                     return -1;
                 }
                 
                 if (lh != kLUTSize)
                 {
-                    fprintf(stderr, "Expecting LUT height of %d\n", kLUTSize);
+                    fprintf(stderr, "Expecting RGB LUT height of %d\n", kLUTSize);
                     return -1;
                 }
 

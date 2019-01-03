@@ -12,6 +12,9 @@ for c in protanope deuteranope tritanope; do
 Results for '$c'
 -------
 
+From left to right: original, Daltonised (Fidaner), corrected (Willmott),
+simulated colour blindness, Daltonised + simulated, corrected + simulated.
+
 EOF
 
 done
@@ -26,11 +29,8 @@ for i in ../tests/*.*; do
     pushd $IMAGE
 
         ../../$CBLUT -f ../$i -p $OPS
-        cp identity.png protanope_identity.png
         ../../$CBLUT -f ../$i -d $OPS
-        cp identity.png deuteranope_identity.png
         ../../$CBLUT -f ../$i -t -rL $OPS
-        cp identity.png tritanope_identity.png
 
     popd
 
@@ -41,12 +41,12 @@ for i in ../tests/*.*; do
 $IMAGE
 ---
 
-<img src="$IMAGE/${c}_identity.png" alt="Original" width="256"/>
-<img src="$IMAGE/${c}_daltonise.png" alt="Daltonised" width="256"/>
-<img src="$IMAGE/${c}_correct.png" alt="Corrected" width="256"/>
-<img src="$IMAGE/${c}_simulate.png" alt="Simulated" width="256"/>
-<img src="$IMAGE/${c}_simulate_daltonised.png" alt="Simulated Daltonised" width="256"/>
-<img src="$IMAGE/${c}_simulate_corrected.png" alt="Simulated Corrected" width="256"/>
+<img src="$IMAGE/${IMAGE}_identity.png" alt="Original" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_daltonise.png" alt="Daltonised" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_correct.png" alt="Corrected" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate.png" alt="Simulated" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate_daltonised.png" alt="Simulated Daltonised" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate_corrected.png" alt="Simulated Corrected" width="256"/>
 
 EOF
 
