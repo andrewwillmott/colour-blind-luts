@@ -7,9 +7,12 @@ OUT=${OUT-out}
 mkdir -p $OUT
 pushd $OUT
 
+echo "Results for Protanopia"   > results-protanope.md
+echo "Results for Deuteranopia" > results-deuteranope.md
+echo "Results for Tritanopia"   > results-tritanope.md
+
 for c in protanope deuteranope tritanope; do
-    cat << EOF > results-$c.md
-Results for '$c'
+    cat << EOF >> results-$c.md
 -------
 
 From left to right: original, Daltonised (Fidaner), corrected (Willmott),
@@ -28,9 +31,15 @@ for i in ../tests/*.*; do
     mkdir -p $IMAGE
     pushd $IMAGE
 
+        # Because we modify the originals, which are for red/green colour-blindness,
+        # by using -rL for Tritanopia, we must make variant copies of the identity
+
         ../../$CBLUT -f ../$i -p $OPS
+        mv ${IMAGE}_identity.png ${IMAGE}_protanope_identity.png
         ../../$CBLUT -f ../$i -d $OPS
+        mv ${IMAGE}_identity.png ${IMAGE}_deuteranope_identity.png
         ../../$CBLUT -f ../$i -t -rL $OPS
+        mv ${IMAGE}_identity.png ${IMAGE}_tritanope_identity.png
 
     popd
 
@@ -41,7 +50,7 @@ for i in ../tests/*.*; do
 $IMAGE
 ---
 
-<img src="$IMAGE/${IMAGE}_identity.png" alt="Original" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_identity.png" alt="Original" width="256"/>
 <img src="$IMAGE/${IMAGE}_${c}_daltonise.png" alt="Daltonised" width="256"/>
 <img src="$IMAGE/${IMAGE}_${c}_correct.png" alt="Corrected" width="256"/>
 <img src="$IMAGE/${IMAGE}_${c}_simulate.png" alt="Simulated" width="256"/>
