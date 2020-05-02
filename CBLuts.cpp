@@ -427,7 +427,7 @@ void CBLut::ApplyLUT(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const R
         dataOut[i].c[0] = ch0;
         dataOut[i].c[1] = ch1;
         dataOut[i].c[2] = ch2;
-        dataOut[i].c[3] = 255;
+        dataOut[i].c[3] = dataIn[i].c[3];
     }
 }
 
