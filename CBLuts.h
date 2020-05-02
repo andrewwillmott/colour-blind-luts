@@ -48,7 +48,7 @@ namespace CBLut
         };
     };
     
-    RGBA32 ToRGBA32   (Vec3f c);
+    RGBA32 ToRGBA32   (Vec3f c, uint8_t alpha);
     RGBA32 ToRGBA32u  (Vec3f c);
     Vec3f  FromRGBA32 (RGBA32 rgb);
     Vec3f  FromRGBA32u(RGBA32 rgb);

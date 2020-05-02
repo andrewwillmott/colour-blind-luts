@@ -307,7 +307,7 @@ namespace
     }
 }
 
-RGBA32 CBLut::ToRGBA32(Vec3f c)
+RGBA32 CBLut::ToRGBA32(Vec3f c, uint8_t alpha)
 {
     c = pow(c, 1.0f / kGamma);
     RGBA32 result;
@@ -315,7 +315,7 @@ RGBA32 CBLut::ToRGBA32(Vec3f c)
     result.c[0] = ToU8(c.x);
     result.c[1] = ToU8(c.y);
     result.c[2] = ToU8(c.z);
-    result.c[3] = 255;
+    result.c[3] = alpha;
 
     return result;
 }
@@ -427,7 +427,7 @@ void CBLut::ApplyLUT(RGBA32 rgbLUT[kLUTSize][kLUTSize][kLUTSize], int n, const R
         dataOut[i].c[0] = ch0;
         dataOut[i].c[1] = ch1;
         dataOut[i].c[2] = ch2;
-        dataOut[i].c[3] = 255;
+        dataOut[i].c[3] = dataIn[i].c[3];
     }
 }
 
