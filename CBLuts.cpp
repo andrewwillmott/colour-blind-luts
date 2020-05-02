@@ -307,7 +307,7 @@ namespace
     }
 }
 
-RGBA32 CBLut::ToRGBA32(Vec3f c)
+RGBA32 CBLut::ToRGBA32(Vec3f c, uint8_t alpha)
 {
     c = pow(c, 1.0f / kGamma);
     RGBA32 result;
@@ -315,7 +315,7 @@ RGBA32 CBLut::ToRGBA32(Vec3f c)
     result.c[0] = ToU8(c.x);
     result.c[1] = ToU8(c.y);
     result.c[2] = ToU8(c.z);
-    result.c[3] = 255;
+    result.c[3] = alpha;
 
     return result;
 }
