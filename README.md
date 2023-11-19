@@ -109,6 +109,6 @@ To build and run the tool, use
 Or, include these files in your favourite IDE, build, and run.
 
 To generate simulated and corrected versions of the supplied [test
-images](tests), along with markdown-style results files, run the supplied
+images](tests/README.md), along with markdown-style results files, run the supplied
 "generate" script. (Currently unix-style OSes only.) The results can be found in
 the 'out' directory.

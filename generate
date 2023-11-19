@@ -3,6 +3,7 @@
 CBLUT=${CBLUT-./cblutgen}
 OPS=${OPS-"-m 1 -isxXyY"}
 OUT=${OUT-out}
+DISPLAY_WIDTH=${DISPLAY_WIDTH-256}
 
 mkdir -p $OUT
 pushd $OUT
@@ -50,12 +51,12 @@ for i in ../tests/*.*; do
 $IMAGE
 ---
 
-<img src="$IMAGE/${IMAGE}_${c}_identity.png" alt="Original" width="256"/>
-<img src="$IMAGE/${IMAGE}_${c}_daltonise.png" alt="Daltonised" width="256"/>
-<img src="$IMAGE/${IMAGE}_${c}_correct.png" alt="Corrected" width="256"/>
-<img src="$IMAGE/${IMAGE}_${c}_simulate.png" alt="Simulated" width="256"/>
-<img src="$IMAGE/${IMAGE}_${c}_simulate_daltonised.png" alt="Simulated Daltonised" width="256"/>
-<img src="$IMAGE/${IMAGE}_${c}_simulate_corrected.png" alt="Simulated Corrected" width="256"/>
+<img src="$IMAGE/${IMAGE}_${c}_identity.png" alt="Original" width="$DISPLAY_WIDTH"/>
+<img src="$IMAGE/${IMAGE}_${c}_daltonise.png" alt="Daltonised" width="$DISPLAY_WIDTH"/>
+<img src="$IMAGE/${IMAGE}_${c}_correct.png" alt="Corrected" width="$DISPLAY_WIDTH"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate.png" alt="Simulated" width="$DISPLAY_WIDTH"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate_daltonised.png" alt="Simulated Daltonised" width="$DISPLAY_WIDTH"/>
+<img src="$IMAGE/${IMAGE}_${c}_simulate_corrected.png" alt="Simulated Corrected" width="$DISPLAY_WIDTH"/>
 
 EOF
 
