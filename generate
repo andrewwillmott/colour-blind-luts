@@ -23,7 +23,7 @@ EOF
 
 done
 
-for i in ../tests/*.*; do
+for i in ../tests/*.jpg ../tests/*.png; do
     BASE=${i##*/}
     IMAGE=${BASE%.*}
 

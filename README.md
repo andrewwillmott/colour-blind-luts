@@ -33,6 +33,9 @@ In my tests the hue-based correction does a better job than Fidaner, however,
 I'd suggest trying both to see which best suits your particular scene type, as
 results are dependent on the distribution of source colours.
 
+Some visual results for all three colour-blindness types [can be found
+here](https://andrewwillmott.github.io/colour-blind-tests/). (See below for how
+to generate this locally.)
 
 RGB LUTs
 --------
@@ -69,6 +72,25 @@ instance, by generating an identity LUT, then applying arbitrary image
 processing operations to that LUT (say in Photoshop), you'll get a LUT that can
 be used to apply the same operations to any image with a single texture lookup.
 
+If you're looking to apply one of these LUTS in a shader, here's an example
+helper function:
+
+```glsl
+    vec3 applyLUT(vec3 c)
+    {
+        float u = (c.r * 31.0 + 0.5) / 32.0;
+        float v = (c.b * 31.0 + 0.5) / 32.0;
+        float slice = c.g * 31.0;
+
+        vec2 uv_g0 = vec2( (u + floor(slice)) / 32.0, v);
+        vec2 uv_g1 = vec2( (u + ceil (slice)) / 32.0, v);
+
+        vec3 lut_g0 = texture(s_tone_map_lut, uv_g0).rgb;
+        vec3 lut_g1 = texture(s_tone_map_lut, uv_g1).rgb;
+
+        return mix(lut_g0, lut_g1, fract(slice));
+    }
+```
 
 Extras
 ------
@@ -108,7 +130,6 @@ To build and run the tool, use
 
 Or, include these files in your favourite IDE, build, and run.
 
-To generate simulated and corrected versions of the supplied [test
-images](tests/README.md), along with markdown-style results files, run the supplied
-"generate" script. (Currently unix-style OSes only.) The results can be found in
-the 'out' directory.
+To (re)generate simulated and corrected versions of the supplied [test
+images](tests/README.md), along with markdown-style results files, run the
+supplied "generate" script. (Currently unix-style OSes only.)
