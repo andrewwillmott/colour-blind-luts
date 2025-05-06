@@ -138,10 +138,11 @@ namespace
         for (int i = 0; i < n; i++)
         {
             Vec3f c = FromRGBA32(dataIn[i]);
+            uint8_t alpha = dataIn[i].c[3];
 
             c = xform(c);
 
-            dataOut[i] = ToRGBA32(c);
+            dataOut[i] = ToRGBA32(c, alpha);
         }
     }
 
@@ -556,7 +557,7 @@ int main(int argc, const char* argv[])
                         assert(rgb.y >= 0.0f && rgb.y <= 1.0f);
                         assert(rgb.z >= 0.0f && rgb.z <= 1.0f);
                         
-                        RGBA32 c = ToRGBA32(rgb);
+                        RGBA32 c = ToRGBA32(rgb, 255);
 
                         (*p++) = c;
                     }
